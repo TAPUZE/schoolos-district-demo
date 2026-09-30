@@ -66,6 +66,15 @@ export default function Home() {
   const activeRole = roleViews[role];
 
   useEffect(() => {
+    document.documentElement.classList.add("district-document");
+    document.body.classList.add("district-page");
+    return () => {
+      document.documentElement.classList.remove("district-document");
+      document.body.classList.remove("district-page");
+    };
+  }, []);
+
+  useEffect(() => {
     const modelContext = (document as Document & { modelContext?: { registerTool: (tool: unknown, options?: { signal?: AbortSignal }) => void | Promise<void> } }).modelContext;
     if (!modelContext?.registerTool) return;
     const lifecycle = new AbortController();

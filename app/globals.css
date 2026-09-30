@@ -62,3 +62,7 @@
 .controls-hint.floating{top:248px;bottom:auto;max-width:min(420px,calc(100vw - 56px));line-height:1.4}
 .scene canvas{touch-action:none;outline:none;cursor:grab}.scene canvas:active{cursor:grabbing}
 .mishnah-overlay,.chapter-eight-card,.glossary-list,.ceremony-console,.mishnah-explanation,.mishnah-overlay blockquote{overscroll-behavior:contain}
+
+/* The district presentation scrolls normally; the 3D route keeps its fixed viewport. */
+html.district-document,body.district-page{width:100%;min-height:100%;height:auto;overflow-x:hidden;overflow-y:auto;background:#f6f8fb;color:#14263b}
+body.district-page{overscroll-behavior-y:none}
