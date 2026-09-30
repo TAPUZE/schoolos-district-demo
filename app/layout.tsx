@@ -2,8 +2,8 @@ import type { Metadata } from "next";
 import "./globals.css";
 
 export const metadata: Metadata = {
-  title: "School Innovation Lab",
-  description: "Interactive demos for school operations, adaptive learning, AI grading, educational games and ancient-world 3D learning.",
+  title: "SchoolOS · Connected District Learning",
+  description: "A connected software suite for public schools—bringing instruction, student support, operations, AI-assisted workflows, and family partnership into one coherent experience.",
   icons: { icon: "/favicon.svg", shortcut: "/favicon.svg" },
 };
 
