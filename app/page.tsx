@@ -1,210 +1,168 @@
 "use client";
 
-import {
-  Accessibility,
-  ArrowRight,
-  BarChart3,
-  BookOpen,
-  Bot,
-  BrainCircuit,
-  Building2,
-  Check,
-  CheckCircle2,
-  ChevronRight,
-  ClipboardCheck,
-  Clock3,
-  ExternalLink,
-  GraduationCap,
-  HandHeart,
-  Languages,
-  LayoutDashboard,
-  Menu,
-  MessageCircleMore,
-  Network,
-  PanelTop,
-  School,
-  ShieldCheck,
-  Sparkles,
-  TabletSmartphone,
-  Users,
-  X,
-} from "lucide-react";
-import { useEffect, useState } from "react";
+import { ArrowRight, BarChart3, BookOpen, Bot, Building2, Check, CheckCircle2, ClipboardCheck, Clock3, GraduationCap, HandHeart, Menu, MessageCircleMore, MousePointer2, Puzzle, School, ShieldCheck, Sparkles, Users, X } from "lucide-react";
+import { useEffect, useMemo, useState } from "react";
 
-type JourneyId = "arrival" | "classroom" | "learning" | "support" | "home";
-type RoleId = "student" | "educator" | "family" | "support" | "district";
-type ProofId = "curriculum" | "grading" | "history";
+type ModuleId = "operations" | "teaching" | "homework" | "support" | "families" | "insights";
+type DayId = "arrival" | "class" | "homework" | "support" | "home";
+type RoleId = "leader" | "teacher" | "student" | "family" | "support";
+type LearningStep = "evidence" | "root" | "path" | "materials";
 
-const journeySteps: Array<{ id: JourneyId; time: string; short: string; title: string; copy: string; signal: string; response: string; outcome: string }> = [
-  { id: "arrival", time: "8:04", short: "Arrival", title: "The day starts with context—not assumptions.", copy: "Jordan checks in after a delayed bus. The attendance team sees the transportation note, and the family receives a confirmation in their preferred language.", signal: "Late arrival + transportation delay", response: "Excused context added automatically", outcome: "No unnecessary discipline loop" },
-  { id: "classroom", time: "9:15", short: "Classroom", title: "The teacher sees what matters before the lesson begins.", copy: "A two-minute check-in shows that Jordan understands the concept but needs a visual example. The lesson view adapts without separating Jordan from classmates.", signal: "Concept ready · visual support helpful", response: "Teacher gets a ready-to-use visual scaffold", outcome: "Support inside core instruction" },
-  { id: "learning", time: "11:20", short: "Learning", title: "Practice meets the learner where they are.", copy: "Jordan works through a math problem with step-by-step feedback, audio support, and the option to explain the answer in words, symbols, or a photo.", signal: "Correct strategy · explanation incomplete", response: "One targeted micro-lesson generated", outcome: "Feedback while the thinking is fresh" },
-  { id: "support", time: "1:10", short: "Support", title: "The support team works from the same picture.", copy: "The counselor, special educator, and therapist can see the classroom strategy that worked—alongside only the information each role is allowed to access.", signal: "Visual scaffold improved independence", response: "Strategy connected to Jordan’s support goal", outcome: "Fewer handoff gaps between adults" },
-  { id: "home", time: "3:42", short: "Home", title: "Families get a useful update, not another portal to decode.", copy: "A short mobile update explains what Jordan learned, celebrates progress, and offers one optional activity. It is translated and designed to work on a basic phone connection.", signal: "Today: persistence + equation balance", response: "Plain-language family update", outcome: "Learning continues without homework confusion" },
+const modules: Array<{ id: ModuleId; title: string; plain: string; detail: string; icon: typeof School }> = [
+  { id: "operations", title: "School operations", plain: "Run the school day", detail: "Enrollment, attendance, schedules, staffing, services, forms, records, and reporting.", icon: Building2 },
+  { id: "teaching", title: "Teaching & curriculum", plain: "Plan and teach", detail: "Standards-aligned units, lesson planning, differentiated materials, and classroom tools.", icon: BookOpen },
+  { id: "homework", title: "Homework, assessment & learning paths", plain: "Diagnose and personalize", detail: "Find recurring root-skill gaps, map the next teaching path, and generate targeted practice for each student.", icon: ClipboardCheck },
+  { id: "support", title: "Student support", plain: "Coordinate the whole child", detail: "IEP and MTSS goals, counseling, therapy, interventions, service logs, and progress notes.", icon: HandHeart },
+  { id: "families", title: "Family connection", plain: "Keep families included", detail: "Clear multilingual updates, mobile access, forms, reminders, celebrations, and two-way communication.", icon: MessageCircleMore },
+  { id: "insights", title: "Insights & responsible AI", plain: "See needs and reduce busywork", detail: "Dashboards, early signals, draft feedback, summaries, and district-defined human review.", icon: BarChart3 },
 ];
 
-const roleViews: Record<RoleId, { eyebrow: string; title: string; copy: string; wins: string[]; preview: "student" | "teacher" | "family" | "support" | "district" }> = {
-  student: { eyebrow: "Student experience", title: "A learning space that responds without labeling.", copy: "Students can choose accessible ways to learn and demonstrate understanding while staying connected to grade-level goals.", wins: ["Choice in how to learn and respond", "Immediate, encouraging feedback", "Visible goals and progress"], preview: "student" },
-  educator: { eyebrow: "Educator workspace", title: "Less hunting for information. More time for teaching.", copy: "Planning, classroom signals, assignments, feedback, and support strategies come together in one calm workspace.", wins: ["Actionable morning brief", "Curriculum and scaffold builder", "Human-reviewed AI assistance"], preview: "teacher" },
-  family: { eyebrow: "Family connection", title: "Communication that respects time, language, and access.", copy: "Families receive clear, mobile-first updates and can respond without navigating a maze of separate systems.", wins: ["Preferred-language communication", "SMS and low-bandwidth pathways", "Clear next steps, not school jargon"], preview: "family" },
-  support: { eyebrow: "Whole-child support", title: "IEP, MTSS, counseling, and therapy—connected carefully.", copy: "Authorized team members coordinate goals, services, notes, and progress without losing the classroom context.", wins: ["Role-based information access", "Shared goal and service timeline", "Earlier, coordinated intervention"], preview: "support" },
-  district: { eyebrow: "District leadership", title: "See where support is working—and where barriers remain.", copy: "Leaders can understand participation, access, service delivery, and instructional needs across schools without reducing students to a score.", wins: ["School and district patterns", "Equity and access signals", "Configurable local measures"], preview: "district" },
+const day: Array<{ id: DayId; time: string; label: string; title: string; story: string; used: ModuleId[] }> = [
+  { id: "arrival", time: "8:05 AM", label: "Arrival", title: "Attendance includes the reason, not just the timestamp.", story: "Jordan’s bus arrives late. The office records the transportation delay, the teacher sees that context, and the family gets a confirmation—without another phone call.", used: ["operations", "families"] },
+  { id: "class", time: "10:20 AM", label: "Class", title: "The teacher starts with the lesson and the support that works.", story: "The class opens today’s algebra lesson. Jordan receives the same grade-level goal with a visual scaffold already available. The teacher stays in control.", used: ["teaching", "support"] },
+  { id: "homework", time: "3:15 PM", label: "Homework", title: "Homework becomes the next step in Jordan’s learning path.", story: "The system recognizes a recurring difficulty with part-whole reasoning—not a vague label like ‘behind in math.’ It prepares a visual model, a short worked example, and targeted practice for the teacher to review and assign.", used: ["homework", "teaching", "insights"] },
+  { id: "support", time: "4:00 PM", label: "Support", title: "Support staff build on what happened in the classroom.", story: "Authorized staff see that the visual model improved independence. They connect the strategy to Jordan’s support goal without exposing unrelated information.", used: ["support", "insights"] },
+  { id: "home", time: "6:30 PM", label: "At home", title: "Families see what is due and how to help—in plain language.", story: "A mobile update shows the homework status, tomorrow’s reminder, and a translated message. The family can reply from the same screen instead of learning another portal.", used: ["families", "homework"] },
+];
+
+const roles: Record<RoleId, { label: string; title: string; copy: string; points: string[] }> = {
+  leader: { label: "District & school leaders", title: "One view of operations, learning, access, and support.", copy: "Configure the measures that matter locally and understand where schools need resources—without forcing every campus into the same workflow.", points: ["District and school dashboards", "Configurable reports and permissions", "Integration with existing systems"] },
+  teacher: { label: "Teachers", title: "One daily workspace instead of disconnected tabs.", copy: "Plan instruction, post homework, review student work, apply supports, and communicate with families from a connected workspace.", points: ["Lesson and curriculum builder", "Assignment and feedback workflow", "Human-reviewed AI assistance"] },
+  student: { label: "Students", title: "A clear place to learn, respond, and ask for help.", copy: "Students see what is happening today, what is due next, and different accessible ways to demonstrate understanding.", points: ["Simple daily plan", "Multiple response formats", "Visible feedback and progress"] },
+  family: { label: "Families", title: "Useful information that works on a phone.", copy: "Families receive plain-language, multilingual updates and can respond without navigating a maze of separate products.", points: ["Assignments and due dates", "Attendance and school updates", "Two-way multilingual communication"] },
+  support: { label: "Support teams", title: "The right context for the right professional.", copy: "Counselors, therapists, special educators, and intervention teams coordinate goals and services with role-based access.", points: ["Shared goal timeline", "Service and progress records", "Classroom strategies that worked"] },
 };
 
-const suiteItems = [
-  { icon: LayoutDashboard, title: "School & district operations", copy: "Enrollment, attendance, schedules, staffing, services, reports, and daily coordination.", detail: "Built from Yad Yisroel’s school-management workflows." },
-  { icon: PanelTop, title: "Teaching & classroom", copy: "Planning, assignments, classroom views, progress checks, and differentiated materials.", detail: "A single daily workspace for educators." },
-  { icon: BrainCircuit, title: "Curriculum studio", copy: "Build district-aligned units, lessons, practice, assessments, and printable materials.", detail: "Powered by FullMath, Selfware, and the book-building engine." },
-  { icon: Bot, title: "AI feedback & workflows", copy: "Draft feedback, analyze student work, summarize patterns, and reduce repetitive administration.", detail: "Staff review stays in the loop." },
-  { icon: HandHeart, title: "Student support", copy: "IEP goals, MTSS interventions, counseling, therapy sessions, service logs, and progress reports.", detail: "The right context for the right role." },
-  { icon: MessageCircleMore, title: "Family partnership", copy: "Plain-language, multilingual, mobile-first updates, reminders, celebrations, and responses.", detail: "Designed for real family access conditions." },
-] as const;
-
-const productProof: Array<{ id: ProofId; label: string; title: string; copy: string; image: string; alt: string; source: string; action?: string }> = [
-  { id: "curriculum", label: "Curriculum engine", title: "Turn standards and lessons into complete learning materials.", copy: "A real output from the book-building engine: structured units, exercises, and print-ready course materials with full right-to-left support.", image: "/screens/curriculum-builder.png", alt: "Generated mathematics curriculum book with a structured table of contents", source: "Math book builder · live output" },
-  { id: "grading", label: "AI grading engine", title: "Analyze student work and return useful instructional feedback.", copy: "The working OptiMath engine accepts a photo or PDF, identifies the mathematics and student work, and prepares detailed feedback for educator review.", image: "/screens/optimath-analytics.png", alt: "OptiMath screen for uploading mathematical work for AI-assisted analysis", source: "OptiMath · working engine" },
-  { id: "history", label: "Immersive learning", title: "Move through a historical world with sources in view.", copy: "The Jerusalem model is already interactive, combining a navigable 3D reconstruction, guided viewpoints, primary-source text, and learning controls.", image: "/screens/ancient-learning.png", alt: "Interactive Second Temple learning environment with navigation and source panel", source: "Ancient worlds engine · interactive now", action: "/ancient" },
+const proof = [
+  { title: "Homework and classroom management", tag: "WORKING APP · ENGLISH", image: "/screens/homework-dashboard.png", alt: "Teacher homework dashboard showing classes and assignment creation", copy: "Teachers create classes, publish assignments, review submissions, and track progress from one workspace.", className: "proof-homework" },
+  { title: "AI-assisted math feedback", tag: "WORKING APP · ENGLISH", image: "/screens/optimath-analytics.png", alt: "OptiMath upload and analysis screen", copy: "Educators can upload student work, identify the mathematics, and review detailed AI-drafted feedback.", className: "proof-math" },
+  { title: "Immersive history learning", tag: "OPTIONAL EXPERIENCE", image: "/screens/ancient-learning.png", alt: "Interactive three-dimensional historical learning environment", copy: "A small example of the custom learning worlds we can build around district curriculum, local history, or global studies.", className: "proof-immersive" },
 ];
 
-export default function Home() {
-  const [journey, setJourney] = useState<JourneyId>("arrival");
-  const [role, setRole] = useState<RoleId>("student");
+const learningSteps: Array<{ id: LearningStep; number: string; label: string; title: string; copy: string }> = [
+  { id: "evidence", number: "01", label: "Collect evidence", title: "Look across the student’s work—not at one score.", copy: "Homework, classwork, explanations, revisions, and teacher observations reveal which errors repeat and under what conditions." },
+  { id: "root", number: "02", label: "Locate the root skill", title: "Find the underlying concept creating problems later.", copy: "Jordan is not simply ‘struggling with Grade 7 math.’ The recurring pattern points to part-whole relationships and scale reasoning across fractions, ratios, and decimals." },
+  { id: "path", number: "03", label: "Map the teaching path", title: "Choose the next explanation and sequence for this student.", copy: "The system recommends a short progression from concrete visual models to number-line reasoning, then reconnects the concept to current grade-level work." },
+  { id: "materials", number: "04", label: "Generate targeted materials", title: "Create practice around the exact need, then keep measuring.", copy: "The teacher receives an editable mini-lesson, worked example, practice set, audio explanation, and quick check. New evidence updates the path." },
+];
+
+export default function HomePage() {
   const [menuOpen, setMenuOpen] = useState(false);
-  const [proof, setProof] = useState<ProofId>("curriculum");
-  const [suiteOpen, setSuiteOpen] = useState(0);
-  const [aiReviewed, setAiReviewed] = useState(false);
-  const [actionOpen, setActionOpen] = useState(false);
-  const [roleAction, setRoleAction] = useState("Choose a response format to preview the student workflow.");
-  const activeJourney = journeySteps.find((step) => step.id === journey)!;
-  const activeRole = roleViews[role];
-  const activeProof = productProof.find((item) => item.id === proof)!;
+  const [selected, setSelected] = useState<ModuleId[]>(["operations", "teaching", "homework"]);
+  const [dayId, setDayId] = useState<DayId>("homework");
+  const [role, setRole] = useState<RoleId>("leader");
+  const [lightbox, setLightbox] = useState<number | null>(null);
+  const [learningStep, setLearningStep] = useState<LearningStep>("root");
+  const activeDay = day.find((item) => item.id === dayId)!;
+  const activeLearningStep = learningSteps.find((item) => item.id === learningStep)!;
+  const selectedModules = useMemo(() => modules.filter((item) => selected.includes(item.id)), [selected]);
 
   useEffect(() => {
-    document.documentElement.classList.add("district-document");
-    document.body.classList.add("district-page");
+    document.documentElement.classList.remove("district-document");
+    document.body.classList.remove("district-page");
+    document.documentElement.classList.add("suite-document");
+    document.body.classList.add("suite-page");
     return () => {
-      document.documentElement.classList.remove("district-document");
-      document.body.classList.remove("district-page");
+      document.documentElement.classList.remove("suite-document");
+      document.body.classList.remove("suite-page");
     };
   }, []);
 
-  useEffect(() => {
-    const modelContext = (document as Document & { modelContext?: { registerTool: (tool: unknown, options?: { signal?: AbortSignal }) => void | Promise<void> } }).modelContext;
-    if (!modelContext?.registerTool) return;
-    const lifecycle = new AbortController();
-    const roles = Object.keys(roleViews) as RoleId[];
-    void Promise.resolve(modelContext.registerTool({
-      name: "show_school_suite_role",
-      title: "Show school suite role",
-      description: "Switch the visible district software demo to the selected community member’s experience.",
-      inputSchema: { type: "object", properties: { role: { type: "string", enum: roles } }, required: ["role"], additionalProperties: false },
-      annotations: { readOnlyHint: true, untrustedContentHint: false },
-      execute(input: unknown) {
-        const nextRole = (input as { role?: string })?.role;
-        if (!roles.includes(nextRole as RoleId)) throw new Error("Unknown role");
-        setRole(nextRole as RoleId);
-        document.getElementById("community")?.scrollIntoView({ behavior: "smooth" });
-        return { role: nextRole, status: "shown" };
-      },
-    }, { signal: lifecycle.signal })).catch(() => undefined);
-    return () => lifecycle.abort();
-  }, []);
+  const toggleModule = (id: ModuleId) => setSelected((current) => current.includes(id) ? current.filter((item) => item !== id) : [...current, id]);
 
-  return <main className="district-site">
-    <header className="district-nav">
-      <a className="district-brand" href="#top" aria-label="SchoolOS home"><span><GraduationCap /></span><div><strong>SchoolOS</strong><small>Connected district learning</small></div></a>
-      <nav className={menuOpen ? "open" : ""} aria-label="Primary navigation">
-        <a href="#proof" onClick={() => setMenuOpen(false)}>Live product</a>
-        <a href="#journey" onClick={() => setMenuOpen(false)}>Student journey</a>
-        <a href="#community" onClick={() => setMenuOpen(false)}>Every role</a>
-        <a href="#suite" onClick={() => setMenuOpen(false)}>The suite</a>
-        <a href="#responsible-ai" onClick={() => setMenuOpen(false)}>Responsible AI</a>
-        <a href="#possibilities" onClick={() => setMenuOpen(false)}>Built for your district</a>
+  return <main className="suite-site">
+    <header className="suite-nav">
+      <a className="suite-brand" href="#top" aria-label="SchoolOS home"><span><GraduationCap /></span><div><strong>SchoolOS</strong><small>Configurable school software</small></div></a>
+      <nav className={menuOpen ? "open" : ""} aria-label="Main navigation">
+        <a href="#suite" onClick={() => setMenuOpen(false)}>01 Platform</a><a href="#learning-engine" onClick={() => setMenuOpen(false)}>02 Learning engine</a><a href="#software" onClick={() => setMenuOpen(false)}>03 Working products</a><a href="#school-day" onClick={() => setMenuOpen(false)}>04 School day</a><a href="#custom" onClick={() => setMenuOpen(false)}>05 Rollout</a>
       </nav>
-      <a className="nav-action" href="#journey">Start the demo <ArrowRight /></a>
-      <button className="mobile-menu" aria-label={menuOpen ? "Close menu" : "Open menu"} onClick={() => setMenuOpen(!menuOpen)}>{menuOpen ? <X /> : <Menu />}</button>
+      <a className="nav-cta" href="#suite">Build your suite <ArrowRight /></a>
+      <button className="nav-menu" aria-label={menuOpen ? "Close menu" : "Open menu"} onClick={() => setMenuOpen(!menuOpen)}>{menuOpen ? <X /> : <Menu />}</button>
     </header>
 
-    <section className="district-hero" id="top">
-      <div className="hero-copy">
-        <span className="hero-label"><Sparkles /> A connected software suite for public schools</span>
-        <h1>One school day.<br />Every learner known.<br /><em>Every adult equipped.</em></h1>
-        <p>SchoolOS connects instruction, student support, operations, and family partnership—so technology expands opportunity instead of adding another disconnected tool.</p>
-        <div className="hero-actions"><a className="button-primary" href="#journey">Follow a student’s day <ArrowRight /></a><a className="button-secondary" href="#suite">Explore the full suite</a></div>
-        <div className="hero-principles"><span><Languages /> Multilingual</span><span><Accessibility /> Accessible</span><span><TabletSmartphone /> Mobile & low-bandwidth</span><span><ShieldCheck /> Human-supervised AI</span></div>
+    <section className="suite-hero" id="top">
+      <div className="hero-message">
+        <span className="eyebrow"><School /> DISTRICT SOLUTION BRIEF · K–12</span>
+        <h1>A configurable school operating system.<br /><em>From daily operations to individual learning.</em></h1>
+        <p>This guided brief shows what the platform includes, how a district chooses its modules, how the learning engine responds to an individual student, and how the suite is introduced across schools.</p>
+        <div className="hero-actions"><a className="primary" href="#suite">Begin the platform walkthrough <ArrowRight /></a><a className="secondary" href="#learning-engine">See individualized learning</a></div>
+        <div className="hero-assurances"><span><Check /> Start with one module</span><span><Check /> Connect what you already use</span><span><Check /> Expand over time</span></div>
       </div>
-      <div className="hero-product" aria-label="Connected student support overview">
-        <div className="product-window-bar"><span className="window-mark"><School /></span><div><strong>Roosevelt Community School</strong><small>Tuesday · Student success view</small></div><span className="live-pill">Live context</span></div>
-        <div className="student-focus"><span className="student-initials">J</span><div><span>Today’s focus</span><strong>Jordan M. · Grade 7</strong><small>Strength: persistent problem-solver</small></div><span className="student-badge">On track</span></div>
-        <div className="signal-grid"><div className="signal-card blue"><span>Learning</span><strong>Visual scaffold worked</strong><small>Math · 11:20 AM</small></div><div className="signal-card coral"><span>Connection</span><strong>Family update ready</strong><small>Spanish · Mobile</small></div><div className="signal-card yellow"><span>Support</span><strong>Goal progress noted</strong><small>Shared with authorized team</small></div><div className="signal-card green"><span>Student voice</span><strong>“I can show my steps”</strong><small>Reflection · Today</small></div></div>
-        <div className="product-next"><CheckCircle2 /><span><strong>Next best action</strong><small>Keep the visual model in tomorrow’s warm-up.</small></span><button aria-label="Open next action" onClick={() => setActionOpen(true)}><ChevronRight /></button></div>
+      <div className="suite-map" aria-label="Example configurable school suite">
+        <div className="map-top"><span>Example district package</span><strong>3 modules selected</strong></div>
+        <div className="map-school"><span><School /></span><div><strong>Roosevelt Community Schools</strong><small>Configured around district priorities</small></div></div>
+        <div className="map-modules">
+          <div className="on"><Building2 /><span><strong>Operations</strong><small>Attendance · schedules · records</small></span><CheckCircle2 /></div>
+          <div className="on"><BookOpen /><span><strong>Teaching</strong><small>Curriculum · lessons · classroom</small></span><CheckCircle2 /></div>
+          <div className="on"><ClipboardCheck /><span><strong>Homework</strong><small>Assignments · grading · feedback</small></span><CheckCircle2 /></div>
+          <div><HandHeart /><span><strong>Add student support</strong><small>IEP · MTSS · therapy · counseling</small></span><Puzzle /></div>
+        </div>
+        <div className="map-core"><ShieldCheck /><span><strong>One secure, connected foundation</strong><small>Roles · integrations · accessibility · reporting</small></span></div>
       </div>
     </section>
 
-    <section className="trust-ribbon" aria-label="Platform principles"><span>Designed around people—not products</span><div><strong>Student agency</strong><strong>Teacher judgment</strong><strong>Family access</strong><strong>Whole-child support</strong><strong>District visibility</strong></div></section>
+    <section className="at-a-glance" aria-label="SchoolOS at a glance">
+      <div><span>PLATFORM</span><strong>One connected foundation</strong><p>Shared people, permissions, data, accessibility, integrations, and reporting.</p></div>
+      <div><span>CAPABILITIES</span><strong>Modules selected by the district</strong><p>Operations, teaching, homework, student support, family connection, and insight.</p></div>
+      <div><span>IMPLEMENTATION</span><strong>Configured around each school system</strong><p>Start with a focused workflow, prove value, and expand on the same foundation.</p></div>
+    </section>
 
-    <section className="proof-section" id="proof">
-      <div className="section-heading proof-heading"><span className="section-kicker">Real software · running today</span><h2>Not concept art. Working engines.</h2><p>Explore authentic screens from products already in the portfolio. SchoolOS brings these capabilities into one clear district experience.</p></div>
-      <div className="proof-shell">
-        <div className="proof-tabs" role="tablist" aria-label="Working product screens">{productProof.map((item) => <button key={item.id} role="tab" aria-selected={proof === item.id} className={proof === item.id ? "active" : ""} onClick={() => setProof(item.id)}><span>{item.label}</span><small>{item.source}</small></button>)}</div>
-        <div className="proof-stage">
-          <div className="proof-browser"><div className="browser-bar"><span /><span /><span /><strong>Product capture</strong></div><img src={activeProof.image} alt={activeProof.alt} /></div>
-          <div className="proof-copy"><span className="proof-live"><i /> Working product</span><h3>{activeProof.title}</h3><p>{activeProof.copy}</p><div className="proof-source"><CheckCircle2 /><span><small>Captured from</small><strong>{activeProof.source}</strong></span></div>{activeProof.action ? <a href={activeProof.action}>Open the live experience <ExternalLink /></a> : <button onClick={() => setProof(activeProof.id === "curriculum" ? "grading" : "history")}>Show another working screen <ArrowRight /></button>}</div>
+    <section className="modules-section" id="suite">
+      <div className="section-intro"><span className="section-number">01</span><span className="eyebrow"><Puzzle /> PLATFORM & MODULES</span><h2>Six connected parts. One package built around your schools.</h2><p>Select any module to see how a district can assemble its own suite.</p></div>
+      <div className="module-builder">
+        <div className="module-grid">{modules.map((item) => { const Icon = item.icon; const isSelected = selected.includes(item.id); return <button key={item.id} className={isSelected ? "module-card selected" : "module-card"} onClick={() => toggleModule(item.id)} aria-pressed={isSelected}><span className="module-check">{isSelected ? <Check /> : <span>+</span>}</span><Icon /><small>{item.plain}</small><strong>{item.title}</strong><p>{item.detail}</p></button>; })}</div>
+        <aside className="package-panel"><span className="panel-label">YOUR EXAMPLE PACKAGE</span><h3>{selected.length ? `${selected.length} connected module${selected.length === 1 ? "" : "s"}` : "Choose your first module"}</h3><p>{selected.length ? "Every selected module shares the same people, permissions, and school context." : "Schools can start small and expand without rebuilding everything."}</p><div className="package-list">{selectedModules.map((item) => <div key={item.id}><CheckCircle2 /><span><strong>{item.title}</strong><small>{item.plain}</small></span></div>)}{!selected.length && <div className="empty-package"><MousePointer2 /><span>Select any module on the left</span></div>}</div><div className="package-foundation"><ShieldCheck /><span><strong>Included foundation</strong><small>Identity, permissions, integrations, accessibility, data, and reporting</small></span></div></aside>
+      </div>
+    </section>
+
+    <section className="learning-section" id="learning-engine">
+      <div className="learning-heading">
+        <span className="section-number">02</span>
+        <div><span className="eyebrow"><Sparkles /> INDIVIDUALIZED LEARNING ENGINE</span><h2>Diagnose the underlying difficulty. Build the next learning path.</h2><p>The goal is not to label a student by grade, course, or test score. The engine looks for the smallest recurring concept that is blocking later learning, then helps the educator address it directly.</p></div>
+      </div>
+      <div className="diagnostic-example">
+        <div className="diagnostic-label"><span>STUDENT CASE · JORDAN, GRADE 7</span><strong>Current unit: proportional relationships</strong></div>
+        <div className="not-this"><span>NOT THIS</span><strong>“Jordan is weak in Grade 7 math.”</strong><p>A broad label does not explain what to teach next.</p></div>
+        <ArrowRight className="diagnostic-arrow" />
+        <div className="this-instead"><span>ROOT PATTERN FOUND</span><strong>Part-whole and scale reasoning is not transferring between representations.</strong><p>The same misconception appears in equivalent fractions, ratio tables, decimal conversion, and multi-step word problems.</p></div>
+      </div>
+      <div className="learning-workspace">
+        <div className="learning-tabs" role="tablist" aria-label="Individualized learning process">{learningSteps.map((item) => <button key={item.id} role="tab" aria-selected={learningStep === item.id} className={learningStep === item.id ? "active" : ""} onClick={() => setLearningStep(item.id)}><span>{item.number}</span><strong>{item.label}</strong></button>)}</div>
+        <div className="learning-detail">
+          <div className="learning-explanation"><span>STEP {activeLearningStep.number}</span><h3>{activeLearningStep.title}</h3><p>{activeLearningStep.copy}</p><div className="teacher-control"><ShieldCheck /><span><strong>Educator review is required</strong><small>The system recommends and generates. The educator decides what is accurate, appropriate, and ready to assign.</small></span></div></div>
+          <div className="student-map">
+            <div className="map-header"><span>JORDAN’S CURRENT LEARNING MAP</span><strong>Updated from recent work</strong></div>
+            <div className="skill-signal"><span>Observed pattern</span><strong>Same error across 4 representations</strong><i style={{width:"82%"}} /></div>
+            <div className="skill-signal root"><span>Root concept</span><strong>Part-whole & scale reasoning</strong><i style={{width:"68%"}} /></div>
+            <div className="pathway-list"><span>RECOMMENDED TEACHING SEQUENCE</span><ol><li><b>1</b>Concrete area model</li><li><b>2</b>Number-line comparison</li><li><b>3</b>Connect fractions to ratios</li><li><b>4</b>Return to grade-level task</li></ol></div>
+            <div className="generated-materials"><span>GENERATED FOR THIS PATH</span><div><b>Editable mini-lesson</b><b>Visual worked example</b><b>Targeted practice</b><b>Two-question check</b></div></div>
+          </div>
         </div>
       </div>
+      <p className="learning-note"><strong>Personalized does not mean permanently categorized.</strong> The system learns which explanations, representations, pacing, and response formats help the student with this concept now. It keeps updating as new evidence appears.</p>
     </section>
 
-    <section className="journey-section" id="journey">
-      <div className="section-heading"><span className="section-kicker">Guided district demo</span><h2>See the platform through one connected day.</h2><p>Jordan is a fictional student. The workflow shows how information can move with care—without making students or families repeat their story at every door.</p></div>
-      <div className="journey-shell">
-        <div className="journey-tabs" role="tablist" aria-label="Jordan's school day">{journeySteps.map((step) => <button key={step.id} role="tab" aria-selected={journey === step.id} className={journey === step.id ? "active" : ""} onClick={() => setJourney(step.id)}><time>{step.time}</time><span>{step.short}</span><i /></button>)}</div>
-        <div className="journey-stage">
-          <div className="journey-story"><span className="journey-time"><Clock3 /> {activeJourney.time} · {activeJourney.short}</span><h3>{activeJourney.title}</h3><p>{activeJourney.copy}</p><div className="journey-impact"><CheckCircle2 /><span><small>Why it matters</small><strong>{activeJourney.outcome}</strong></span></div></div>
-          <div className="journey-flow"><div><span className="flow-icon signal"><BarChart3 /></span><small>Signal</small><strong>{activeJourney.signal}</strong></div><ArrowRight className="flow-arrow" /><div><span className="flow-icon response"><Sparkles /></span><small>Coordinated response</small><strong>{activeJourney.response}</strong></div></div>
-        </div>
-        <div className="journey-controls"><span>{journeySteps.findIndex((step) => step.id === journey) + 1} of {journeySteps.length}</span><button onClick={() => { const index = journeySteps.findIndex((step) => step.id === journey); setJourney(journeySteps[(index + 1) % journeySteps.length].id); }}>Next moment <ArrowRight /></button></div>
-      </div>
+    <section className="software-section" id="software">
+      <div className="section-intro light"><span className="section-number">03</span><span className="eyebrow"><Sparkles /> WORKING PRODUCTS</span><h2>Working software—not just presentation mockups.</h2><p>These screens come from products in our portfolio. Click any screen to inspect it at full size.</p></div>
+      <div className="proof-grid">{proof.map((item, index) => <article className={`proof-card ${item.className}`} key={item.title}><button className="screen-button" onClick={() => setLightbox(index)} aria-label={`Enlarge ${item.title}`}><img src={item.image} alt={item.alt} /></button><div className="proof-text"><span>{item.tag}</span><h3>{item.title}</h3><p>{item.copy}</p><button onClick={() => setLightbox(index)}>View real screen <ArrowRight /></button></div></article>)}</div>
+      <div className="proof-note"><ShieldCheck /><p><strong>Built for a U.S. public-school deployment.</strong> The district version uses your terminology, curriculum, languages, accessibility requirements, permissions, and data policies.</p></div>
     </section>
 
-    <section className="community-section" id="community">
-      <div className="section-heading light"><span className="section-kicker">One platform · different needs</span><h2>Technology that works for the whole school community.</h2><p>Switch perspectives to see how the same connected platform removes a different barrier for each person.</p></div>
-      <div className="role-tabs" role="tablist" aria-label="Community member views">{(["student","educator","family","support","district"] as RoleId[]).map((id) => <button key={id} role="tab" aria-selected={role === id} className={role === id ? "active" : ""} onClick={() => setRole(id)}>{id === "support" ? "Support team" : id[0].toUpperCase() + id.slice(1)}</button>)}</div>
-      <div className="role-stage"><div className="role-copy"><span>{activeRole.eyebrow}</span><h3>{activeRole.title}</h3><p>{activeRole.copy}</p><ul>{activeRole.wins.map((win) => <li key={win}><Check /> {win}</li>)}</ul></div><RolePreview type={activeRole.preview} onAction={setRoleAction} message={roleAction} /></div>
+    <section className="day-section" id="school-day">
+      <div className="section-intro"><span className="section-number">04</span><span className="eyebrow"><Clock3 /> THE CONNECTED SCHOOL DAY</span><h2>Follow one student through a connected school day.</h2><p>The suite connects the work already happening across the school. Homework is part of the day—not a separate system.</p></div>
+      <div className="day-tabs" role="tablist" aria-label="Student school day">{day.map((item) => <button key={item.id} role="tab" aria-selected={dayId === item.id} className={dayId === item.id ? "active" : ""} onClick={() => setDayId(item.id)}><span>{item.time}</span><strong>{item.label}</strong></button>)}</div>
+      <div className="day-card"><div className="day-story"><span>{activeDay.time} · JORDAN, GRADE 7</span><h3>{activeDay.title}</h3><p>{activeDay.story}</p></div><div className="day-connections"><span>CONNECTED MODULES</span>{activeDay.used.map((id) => { const item = modules.find((module) => module.id === id)!; const Icon = item.icon; return <div key={id}><Icon /><span><strong>{item.title}</strong><small>{item.plain}</small></span></div>; })}</div></div>
     </section>
 
-    <section className="suite-section" id="suite">
-      <div className="section-heading split"><div><span className="section-kicker">The SchoolOS suite</span><h2>One coherent foundation.<br />Six connected capabilities.</h2></div><p>Districts can begin with the highest-priority workflow and expand without rebuilding the experience around a new vendor every year.</p></div>
-      <div className="suite-grid">{suiteItems.map(({ icon: Icon, title, copy, detail }, index) => <article key={title} className={suiteOpen === index ? "selected" : ""} role="button" tabIndex={0} aria-label={`Explore ${title}`} onClick={() => setSuiteOpen(index)} onKeyDown={(event) => { if (event.key === "Enter" || event.key === " ") setSuiteOpen(index); }}><span className={`suite-icon suite-${index + 1}`}><Icon /></span><span className="suite-number">0{index + 1}</span><h3>{title}</h3><p>{copy}</p><small>{detail}</small></article>)}</div>
-      <div className="suite-detail" aria-live="polite"><span className={`suite-icon suite-${suiteOpen + 1}`}>{(() => { const Icon = suiteItems[suiteOpen].icon; return <Icon />; })()}</span><div><small>Selected capability</small><strong>{suiteItems[suiteOpen].title}</strong><p>{suiteItems[suiteOpen].copy} {suiteItems[suiteOpen].detail}</p></div><button onClick={() => document.getElementById("community")?.scrollIntoView({ behavior: "smooth" })}>See it by role <ArrowRight /></button></div>
-      <div className="connected-layer"><Network /><div><span>Connected data and workflow layer</span><strong>One student, one trusted story, appropriate access for every role.</strong></div><div className="layer-chips"><span>SIS</span><span>LMS</span><span>IEP / MTSS</span><span>Curriculum</span><span>Family</span><span>Analytics</span></div></div>
+    <section className="people-section" id="people">
+      <div className="section-intro split-intro"><div><span className="eyebrow"><Users /> ONE PLATFORM · DIFFERENT JOBS</span><h2>Clear value for every person in the school community.</h2></div><p>Choose a role to see what the same connected suite makes easier.</p></div>
+      <div className="role-layout"><div className="role-tabs" role="tablist" aria-label="School community roles">{(Object.keys(roles) as RoleId[]).map((id) => <button key={id} role="tab" aria-selected={role === id} className={role === id ? "active" : ""} onClick={() => setRole(id)}>{roles[id].label}<ArrowRight /></button>)}</div><div className="role-detail"><span>{roles[role].label}</span><h3>{roles[role].title}</h3><p>{roles[role].copy}</p><div>{roles[role].points.map((point) => <strong key={point}><CheckCircle2 />{point}</strong>)}</div></div></div>
     </section>
 
-    <section className="ai-section" id="responsible-ai">
-      <div className={`ai-demo-card ${aiReviewed ? "reviewed" : ""}`}><div className="ai-card-top"><span><Bot /> SchoolOS Copilot</span><small>{aiReviewed ? "Approved by Ms. Reed" : "Teacher review required"}</small></div><div className="ai-prompt"><span>Teacher request</span><p>“Create a visual warm-up for balancing equations. Keep it grade-level, readable on a phone, and offer an audio option.”</p></div><div className="ai-result"><span>{aiReviewed ? <><CheckCircle2 /> Ready to assign</> : <><Sparkles /> Draft ready for review</>}</span><div><Check /> District standard aligned</div><div><Check /> Visual and audio supports included</div><div><Check /> Student data excluded from the prompt</div></div><button onClick={() => setAiReviewed(!aiReviewed)}>{aiReviewed ? "Return to draft" : "Review and approve draft"} <ArrowRight /></button></div>
-      <div className="ai-copy"><span className="section-kicker">AI that serves educators</span><h2>Powerful assistance.<br />Clear human control.</h2><p>AI can reduce repetitive work and make personalization practical—but it should never quietly make high-stakes decisions about students.</p><div className="guardrails"><div><ShieldCheck /><span><strong>People stay accountable</strong><small>Staff review outputs before they affect instruction, services, or communication.</small></span></div><div><BookOpen /><span><strong>Sources stay visible</strong><small>Educators can inspect the standards, materials, and context behind a suggestion.</small></span></div><div><Accessibility /><span><strong>Equity is tested, not assumed</strong><small>District-defined review for language, accessibility, bias, and disparate impact.</small></span></div></div></div>
-    </section>
+    <section className="custom-section" id="custom"><div className="custom-copy"><span className="section-number">05</span><span className="eyebrow"><Bot /> DISTRICT ROLLOUT</span><h2>The suite is the starting point—not a limit.</h2><p>Our engines let us configure existing modules and build district-specific workflows without turning the result into another disconnected product.</p></div><div className="custom-steps"><div><span>1</span><strong>Choose the priority</strong><p>Attendance, homework, curriculum, support services, family access, or another district need.</p></div><div><span>2</span><strong>Configure the suite</strong><p>Select modules, roles, terminology, integrations, languages, accessibility, and reports.</p></div><div><span>3</span><strong>Pilot and expand</strong><p>Launch a focused workflow, measure what helps, and add more on the same foundation.</p></div></div></section>
+    <section className="closing-section"><div><span>A MODULAR SCHOOL PLATFORM</span><h2>Start with what your schools need now.<br />Build toward what they need next.</h2></div><a href="#suite">Explore the suite again <ArrowRight /></a></section>
+    <footer><div className="suite-brand"><span><GraduationCap /></span><div><strong>SchoolOS</strong><small>Configurable school software</small></div></div><a href="#top">Return to top <ArrowRight /></a></footer>
 
-    <section className="campus-vision" aria-label="Connected school community"><img src="/art/connected-campus.png" alt="A diverse urban school community learning in a bright connected campus" /><div><span>Designed for the real school day</span><h2>Technology should connect the people already doing the work.</h2><p>One flexible foundation for learning, student support, family partnership, and district operations.</p><a href="#possibilities">See how districts can start <ArrowRight /></a></div></section>
-
-    <section className="immersive-section">
-      <div className="immersive-heading"><span className="section-kicker">A small window into what else is possible</span><h2>Curriculum can become an experience.</h2><p>Immersive learning is one optional part of the suite—not the center of it. Students can investigate places, evidence, and competing interpretations together.</p></div>
-      <div className="immersive-grid"><article className="immersive-live"><div className="scene-stamp">Interactive now</div><div className="scene-art temple-art" aria-hidden="true"><Building2 /></div><div><span>Jerusalem · Second Temple</span><h3>Walk through history with the sources beside you.</h3><p>Explore architecture, vocabulary, ritual sequence, and evidence in a guided 3D model.</p><a href="/ancient">Open the curated 3D experience <ArrowRight /></a></div></article><article><span className="concept-label">Model concept</span><div className="small-scene"><strong>ROME</strong><span>Colosseum & civic life</span></div><p>Compare public space, power, engineering, and daily life through a carefully sourced reconstruction.</p></article><article><span className="concept-label">Custom to the district</span><div className="small-scene local"><strong>OUR CITY</strong><span>Neighborhood history</span></div><p>Build local-history experiences with community archives, student voices, and district curriculum.</p></article></div>
-    </section>
-
-    <section className="possibilities-section" id="possibilities">
-      <div className="possibilities-copy"><span className="section-kicker">Built with your district—not dropped on it</span><h2>This suite is the starting point.</h2><p>The engines behind this demo can be configured around district priorities, existing systems, language communities, instructional frameworks, and the realities of each school.</p><div className="custom-list"><div><span>01</span><p><strong>Start with the barrier</strong>Listen to students, families, educators, and support teams before choosing the workflow.</p></div><div><span>02</span><p><strong>Build a focused pilot</strong>Connect one high-value journey and define success with the people doing the work.</p></div><div><span>03</span><p><strong>Grow a shared platform</strong>Expand the connected foundation instead of creating another patchwork of tools.</p></div></div></div>
-      <div className="iceberg-card"><span className="iceberg-top">What you see today</span><div className="visible-modules"><span>School operations</span><span>Learning</span><span>Student support</span><span>Family</span></div><div className="water-line">A connected foundation</div><div className="engine-list"><span>Workflow engine</span><span>Curriculum engine</span><span>AI orchestration</span><span>Content generation</span><span>Game systems</span><span>3D experiences</span><span>Reporting</span><span>Integrations</span><span>Accessibility</span></div><small>Custom capabilities can be built on the same foundation.</small></div>
-    </section>
-
-    <footer><div className="footer-brand"><span><GraduationCap /></span><div><strong>SchoolOS</strong><small>The connected software suite for the school of tomorrow.</small></div></div><a href="#top">Return to the top <ArrowRight /></a></footer>
-    {actionOpen && <div className="demo-modal" role="dialog" aria-modal="true" aria-labelledby="next-action-title" onClick={() => setActionOpen(false)}><div onClick={(event) => event.stopPropagation()}><button className="modal-close" aria-label="Close" onClick={() => setActionOpen(false)}><X /></button><span className="section-kicker">Coordinated next step</span><h2 id="next-action-title">Tomorrow’s warm-up is ready.</h2><p>The visual balance model that helped Jordan has been added to Ms. Reed’s draft. The teacher reviews it before it reaches the class.</p><div className="modal-route"><CheckCircle2 /><span><strong>Classroom context preserved</strong><small>No diagnosis or private support note is exposed.</small></span></div><a className="button-primary" href="#responsible-ai" onClick={() => setActionOpen(false)}>Review the AI workflow <ArrowRight /></a></div></div>}
+    {lightbox !== null && <div className="lightbox" role="dialog" aria-modal="true" aria-label={proof[lightbox].title} onClick={() => setLightbox(null)}><button className="lightbox-close" aria-label="Close full screen" onClick={() => setLightbox(null)}><X /></button><div onClick={(event) => event.stopPropagation()}><img src={proof[lightbox].image} alt={proof[lightbox].alt} /><div><span>{proof[lightbox].tag}</span><strong>{proof[lightbox].title}</strong><p>{proof[lightbox].copy}</p></div></div></div>}
   </main>;
-}
-
-function RolePreview({ type, onAction, message }: { type: "student" | "teacher" | "family" | "support" | "district"; onAction: (message: string) => void; message: string }) {
-  if (type === "student") return <div className="role-preview student-preview"><div className="preview-top"><span>My learning</span><strong>Good morning, Jordan</strong></div><div className="student-task"><span>Today’s next step</span><strong>Show how you balanced the equation</strong><div><button onClick={() => onAction("Drawing canvas selected — visual tools are ready.")}>Draw it</button><button onClick={() => onAction("Audio explanation selected — microphone check passed.")}>Explain it</button><button onClick={() => onAction("Camera upload selected — photo guidance is ready.")}>Upload it</button></div><small className="role-feedback" aria-live="polite">{message}</small></div><div className="student-progress"><span>Weekly goal</span><strong>3 of 4 practice moments</strong><i><b /></i></div></div>;
-  if (type === "teacher") return <div className="role-preview teacher-preview"><div className="preview-top"><span>Period 2 · Math</span><strong>Classroom brief</strong></div><div className="teacher-metrics"><div><strong>18</strong><span>Ready to extend</span></div><div><strong>6</strong><span>Need a visual model</span></div><div><strong>3</strong><span>Check in first</span></div></div><div className="teacher-action"><Sparkles /><span><strong>Warm-up draft ready</strong><small>Aligned to today’s objective · review before sharing</small></span><ChevronRight /></div></div>;
-  if (type === "family") return <div className="role-preview phone-preview"><div className="phone-shell"><div className="phone-bar"><span>School update</span><small>Español</small></div><div className="family-message"><span>Today · 3:42 PM</span><strong>Jordan kept working through a challenging math problem today.</strong><p>Ask: “Can you show me how you kept both sides balanced?” No worksheet needed.</p><div>{message}</div></div><button onClick={() => onAction("Reply opened in the family’s preferred language.")}>Reply to the teacher</button></div></div>;
-  if (type === "support") return <div className="role-preview support-preview"><div className="preview-top"><span>Authorized team view</span><strong>Jordan’s support plan</strong></div><div className="goal-row"><span>Current goal</span><strong>Explain a problem-solving strategy independently</strong><i><b /></i><small>72% toward term target</small></div><div className="support-note"><CheckCircle2 /><span><strong>Classroom strategy connected</strong><small>Visual balance model · added today by Ms. Reed</small></span></div></div>;
-  return <div className="role-preview district-preview"><div className="preview-top"><span>District learning & access</span><strong>Where should we focus support?</strong></div><div className="district-chart"><div><span>Multilingual family reach</span><i><b style={{ width: "84%" }} /></i></div><div><span>Timely service delivery</span><i><b style={{ width: "72%" }} /></i></div><div><span>Accessible materials</span><i><b style={{ width: "91%" }} /></i></div></div><div className="district-note"><BarChart3 /><span><strong>Pattern worth reviewing</strong><small>Two schools need additional translation workflow support.</small></span></div></div>;
 }
