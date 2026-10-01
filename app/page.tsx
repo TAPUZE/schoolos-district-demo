@@ -34,9 +34,9 @@ const roles: Record<RoleId, { label: string; title: string; copy: string; points
 };
 
 const proof = [
-  { title: "Homework and classroom management", tag: "WORKING APP · ENGLISH", image: "/screens/homework-dashboard.png", alt: "Teacher homework dashboard showing classes and assignment creation", copy: "Teachers create classes, publish assignments, review submissions, and track progress from one workspace.", className: "proof-homework" },
-  { title: "AI-assisted math feedback", tag: "WORKING APP · ENGLISH", image: "/screens/optimath-analytics.png", alt: "OptiMath upload and analysis screen", copy: "Educators can upload student work, identify the mathematics, and review detailed AI-drafted feedback.", className: "proof-math" },
-  { title: "Immersive history learning", tag: "OPTIONAL EXPERIENCE", image: "/screens/ancient-learning.png", alt: "Interactive three-dimensional historical learning environment", copy: "A small example of the custom learning worlds we can build around district curriculum, local history, or global studies.", className: "proof-immersive" },
+  { title: "District command center", tag: "UNIFIED PLATFORM CONCEPT · DISTRICT VIEW", image: "/mockups/district-command-center.png", alt: "SchoolOS district command center with attendance, student progress, and campus insights", copy: "Leaders see attendance, learning, support, and campus signals in one calm, actionable view.", className: "proof-district" },
+  { title: "Individual learning path", tag: "UNIFIED PLATFORM CONCEPT · STUDENT VIEW", image: "/mockups/student-learning-path.png", alt: "SchoolOS individual learning path showing a root skill diagnosis and targeted materials", copy: "The platform identifies a precise root skill, maps the next teaching sequence, and prepares materials for educator review.", className: "proof-student" },
+  { title: "Teacher Studio", tag: "UNIFIED PLATFORM CONCEPT · TEACHER VIEW", image: "/mockups/teacher-studio.png", alt: "SchoolOS Teacher Studio with targeted assignment creation and educator approval", copy: "Teachers turn student evidence into accessible assignments while remaining in control of every AI-assisted decision.", className: "proof-teacher" },
 ];
 
 const learningSteps: Array<{ id: LearningStep; number: string; label: string; title: string; copy: string }> = [
@@ -74,7 +74,7 @@ export default function HomePage() {
     <header className="suite-nav">
       <a className="suite-brand" href="#top" aria-label="SchoolOS home"><span><GraduationCap /></span><div><strong>SchoolOS</strong><small>Configurable school software</small></div></a>
       <nav className={menuOpen ? "open" : ""} aria-label="Main navigation">
-        <a href="#suite" onClick={() => setMenuOpen(false)}>01 Platform</a><a href="#learning-engine" onClick={() => setMenuOpen(false)}>02 Learning engine</a><a href="#software" onClick={() => setMenuOpen(false)}>03 Working products</a><a href="#school-day" onClick={() => setMenuOpen(false)}>04 School day</a><a href="#custom" onClick={() => setMenuOpen(false)}>05 Rollout</a>
+        <a href="#suite" onClick={() => setMenuOpen(false)}>01 Platform</a><a href="#learning-engine" onClick={() => setMenuOpen(false)}>02 Learning engine</a><a href="#software" onClick={() => setMenuOpen(false)}>03 Platform views</a><a href="#school-day" onClick={() => setMenuOpen(false)}>04 School day</a><a href="#custom" onClick={() => setMenuOpen(false)}>05 Rollout</a>
       </nav>
       <a className="nav-cta" href="#suite">Build your suite <ArrowRight /></a>
       <button className="nav-menu" aria-label={menuOpen ? "Close menu" : "Open menu"} onClick={() => setMenuOpen(!menuOpen)}>{menuOpen ? <X /> : <Menu />}</button>
@@ -82,22 +82,15 @@ export default function HomePage() {
 
     <section className="suite-hero" id="top">
       <div className="hero-message">
-        <span className="eyebrow"><School /> DISTRICT SOLUTION BRIEF · K–12</span>
-        <h1>A configurable school operating system.<br /><em>From daily operations to individual learning.</em></h1>
-        <p>This guided brief shows what the platform includes, how a district chooses its modules, how the learning engine responds to an individual student, and how the suite is introduced across schools.</p>
-        <div className="hero-actions"><a className="primary" href="#suite">Begin the platform walkthrough <ArrowRight /></a><a className="secondary" href="#learning-engine">See individualized learning</a></div>
+        <span className="eyebrow"><School /> ONE CONNECTED PLATFORM FOR K–12</span>
+        <h1>Every school system,<br /><em>working as one.</em></h1>
+        <p>SchoolOS connects operations, teaching, homework, individualized learning, student support, and family communication—configured around the way your district actually works.</p>
+        <div className="hero-actions"><a className="primary" href="#software">See the platform <ArrowRight /></a><a className="secondary" href="#suite">Build your suite</a></div>
         <div className="hero-assurances"><span><Check /> Start with one module</span><span><Check /> Connect what you already use</span><span><Check /> Expand over time</span></div>
       </div>
-      <div className="suite-map" aria-label="Example configurable school suite">
-        <div className="map-top"><span>Example district package</span><strong>3 modules selected</strong></div>
-        <div className="map-school"><span><School /></span><div><strong>Roosevelt Community Schools</strong><small>Configured around district priorities</small></div></div>
-        <div className="map-modules">
-          <div className="on"><Building2 /><span><strong>Operations</strong><small>Attendance · schedules · records</small></span><CheckCircle2 /></div>
-          <div className="on"><BookOpen /><span><strong>Teaching</strong><small>Curriculum · lessons · classroom</small></span><CheckCircle2 /></div>
-          <div className="on"><ClipboardCheck /><span><strong>Homework</strong><small>Assignments · grading · feedback</small></span><CheckCircle2 /></div>
-          <div><HandHeart /><span><strong>Add student support</strong><small>IEP · MTSS · therapy · counseling</small></span><Puzzle /></div>
-        </div>
-        <div className="map-core"><ShieldCheck /><span><strong>One secure, connected foundation</strong><small>Roles · integrations · accessibility · reporting</small></span></div>
+      <div className="hero-product" aria-label="SchoolOS district platform preview">
+        <div className="hero-product-label"><span>District command center</span><strong>One live view across every school</strong></div>
+        <button onClick={() => setLightbox(0)} aria-label="Enlarge district command center"><img src="/mockups/district-command-center.png" alt="SchoolOS district command center" /></button>
       </div>
     </section>
 
@@ -143,9 +136,9 @@ export default function HomePage() {
     </section>
 
     <section className="software-section" id="software">
-      <div className="section-intro light"><span className="section-number">03</span><span className="eyebrow"><Sparkles /> WORKING PRODUCTS</span><h2>Working software—not just presentation mockups.</h2><p>These screens come from products in our portfolio. Click any screen to inspect it at full size.</p></div>
-      <div className="proof-grid">{proof.map((item, index) => <article className={`proof-card ${item.className}`} key={item.title}><button className="screen-button" onClick={() => setLightbox(index)} aria-label={`Enlarge ${item.title}`}><img src={item.image} alt={item.alt} /></button><div className="proof-text"><span>{item.tag}</span><h3>{item.title}</h3><p>{item.copy}</p><button onClick={() => setLightbox(index)}>View real screen <ArrowRight /></button></div></article>)}</div>
-      <div className="proof-note"><ShieldCheck /><p><strong>Built for a U.S. public-school deployment.</strong> The district version uses your terminology, curriculum, languages, accessibility requirements, permissions, and data policies.</p></div>
+      <div className="section-intro"><span className="section-number">03</span><span className="eyebrow"><Sparkles /> ONE COHERENT PRODUCT EXPERIENCE</span><h2>Different jobs. One familiar platform.</h2><p>These concept views show how the working engines become a consistent district experience—from the central office to the classroom to one student’s learning path.</p></div>
+      <div className="proof-grid">{proof.map((item, index) => <article className={`proof-card ${item.className}`} key={item.title}><button className="screen-button" onClick={() => setLightbox(index)} aria-label={`Enlarge ${item.title}`}><img src={item.image} alt={item.alt} /></button><div className="proof-text"><span>{item.tag}</span><h3>{item.title}</h3><p>{item.copy}</p><button onClick={() => setLightbox(index)}>Open full view <ArrowRight /></button></div></article>)}</div>
+      <div className="proof-note"><ShieldCheck /><p><strong>Designed for a U.S. public-school deployment.</strong> Every view is configured to district terminology, curriculum, languages, accessibility requirements, permissions, integrations, and data policies.</p></div>
     </section>
 
     <section className="day-section" id="school-day">
