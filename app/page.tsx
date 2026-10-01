@@ -13,6 +13,7 @@ import {
   ChevronRight,
   ClipboardCheck,
   Clock3,
+  ExternalLink,
   GraduationCap,
   HandHeart,
   Languages,
@@ -32,6 +33,7 @@ import { useEffect, useState } from "react";
 
 type JourneyId = "arrival" | "classroom" | "learning" | "support" | "home";
 type RoleId = "student" | "educator" | "family" | "support" | "district";
+type ProofId = "curriculum" | "grading" | "history";
 
 const journeySteps: Array<{ id: JourneyId; time: string; short: string; title: string; copy: string; signal: string; response: string; outcome: string }> = [
   { id: "arrival", time: "8:04", short: "Arrival", title: "The day starts with context—not assumptions.", copy: "Jordan checks in after a delayed bus. The attendance team sees the transportation note, and the family receives a confirmation in their preferred language.", signal: "Late arrival + transportation delay", response: "Excused context added automatically", outcome: "No unnecessary discipline loop" },
@@ -58,12 +60,24 @@ const suiteItems = [
   { icon: MessageCircleMore, title: "Family partnership", copy: "Plain-language, multilingual, mobile-first updates, reminders, celebrations, and responses.", detail: "Designed for real family access conditions." },
 ] as const;
 
+const productProof: Array<{ id: ProofId; label: string; title: string; copy: string; image: string; alt: string; source: string; action?: string }> = [
+  { id: "curriculum", label: "Curriculum engine", title: "Turn standards and lessons into complete learning materials.", copy: "A real output from the book-building engine: structured units, exercises, and print-ready course materials with full right-to-left support.", image: "/screens/curriculum-builder.png", alt: "Generated mathematics curriculum book with a structured table of contents", source: "Math book builder · live output" },
+  { id: "grading", label: "AI grading engine", title: "Analyze student work and return useful instructional feedback.", copy: "The working OptiMath engine accepts a photo or PDF, identifies the mathematics and student work, and prepares detailed feedback for educator review.", image: "/screens/optimath-analytics.png", alt: "OptiMath screen for uploading mathematical work for AI-assisted analysis", source: "OptiMath · working engine" },
+  { id: "history", label: "Immersive learning", title: "Move through a historical world with sources in view.", copy: "The Jerusalem model is already interactive, combining a navigable 3D reconstruction, guided viewpoints, primary-source text, and learning controls.", image: "/screens/ancient-learning.png", alt: "Interactive Second Temple learning environment with navigation and source panel", source: "Ancient worlds engine · interactive now", action: "/ancient" },
+];
+
 export default function Home() {
   const [journey, setJourney] = useState<JourneyId>("arrival");
   const [role, setRole] = useState<RoleId>("student");
   const [menuOpen, setMenuOpen] = useState(false);
+  const [proof, setProof] = useState<ProofId>("curriculum");
+  const [suiteOpen, setSuiteOpen] = useState(0);
+  const [aiReviewed, setAiReviewed] = useState(false);
+  const [actionOpen, setActionOpen] = useState(false);
+  const [roleAction, setRoleAction] = useState("Choose a response format to preview the student workflow.");
   const activeJourney = journeySteps.find((step) => step.id === journey)!;
   const activeRole = roleViews[role];
+  const activeProof = productProof.find((item) => item.id === proof)!;
 
   useEffect(() => {
     document.documentElement.classList.add("district-document");
@@ -100,6 +114,7 @@ export default function Home() {
     <header className="district-nav">
       <a className="district-brand" href="#top" aria-label="SchoolOS home"><span><GraduationCap /></span><div><strong>SchoolOS</strong><small>Connected district learning</small></div></a>
       <nav className={menuOpen ? "open" : ""} aria-label="Primary navigation">
+        <a href="#proof" onClick={() => setMenuOpen(false)}>Live product</a>
         <a href="#journey" onClick={() => setMenuOpen(false)}>Student journey</a>
         <a href="#community" onClick={() => setMenuOpen(false)}>Every role</a>
         <a href="#suite" onClick={() => setMenuOpen(false)}>The suite</a>
@@ -122,11 +137,22 @@ export default function Home() {
         <div className="product-window-bar"><span className="window-mark"><School /></span><div><strong>Roosevelt Community School</strong><small>Tuesday · Student success view</small></div><span className="live-pill">Live context</span></div>
         <div className="student-focus"><span className="student-initials">J</span><div><span>Today’s focus</span><strong>Jordan M. · Grade 7</strong><small>Strength: persistent problem-solver</small></div><span className="student-badge">On track</span></div>
         <div className="signal-grid"><div className="signal-card blue"><span>Learning</span><strong>Visual scaffold worked</strong><small>Math · 11:20 AM</small></div><div className="signal-card coral"><span>Connection</span><strong>Family update ready</strong><small>Spanish · Mobile</small></div><div className="signal-card yellow"><span>Support</span><strong>Goal progress noted</strong><small>Shared with authorized team</small></div><div className="signal-card green"><span>Student voice</span><strong>“I can show my steps”</strong><small>Reflection · Today</small></div></div>
-        <div className="product-next"><CheckCircle2 /><span><strong>Next best action</strong><small>Keep the visual model in tomorrow’s warm-up.</small></span><button aria-label="Open next action"><ChevronRight /></button></div>
+        <div className="product-next"><CheckCircle2 /><span><strong>Next best action</strong><small>Keep the visual model in tomorrow’s warm-up.</small></span><button aria-label="Open next action" onClick={() => setActionOpen(true)}><ChevronRight /></button></div>
       </div>
     </section>
 
     <section className="trust-ribbon" aria-label="Platform principles"><span>Designed around people—not products</span><div><strong>Student agency</strong><strong>Teacher judgment</strong><strong>Family access</strong><strong>Whole-child support</strong><strong>District visibility</strong></div></section>
+
+    <section className="proof-section" id="proof">
+      <div className="section-heading proof-heading"><span className="section-kicker">Real software · running today</span><h2>Not concept art. Working engines.</h2><p>Explore authentic screens from products already in the portfolio. SchoolOS brings these capabilities into one clear district experience.</p></div>
+      <div className="proof-shell">
+        <div className="proof-tabs" role="tablist" aria-label="Working product screens">{productProof.map((item) => <button key={item.id} role="tab" aria-selected={proof === item.id} className={proof === item.id ? "active" : ""} onClick={() => setProof(item.id)}><span>{item.label}</span><small>{item.source}</small></button>)}</div>
+        <div className="proof-stage">
+          <div className="proof-browser"><div className="browser-bar"><span /><span /><span /><strong>Product capture</strong></div><img src={activeProof.image} alt={activeProof.alt} /></div>
+          <div className="proof-copy"><span className="proof-live"><i /> Working product</span><h3>{activeProof.title}</h3><p>{activeProof.copy}</p><div className="proof-source"><CheckCircle2 /><span><small>Captured from</small><strong>{activeProof.source}</strong></span></div>{activeProof.action ? <a href={activeProof.action}>Open the live experience <ExternalLink /></a> : <button onClick={() => setProof(activeProof.id === "curriculum" ? "grading" : "history")}>Show another working screen <ArrowRight /></button>}</div>
+        </div>
+      </div>
+    </section>
 
     <section className="journey-section" id="journey">
       <div className="section-heading"><span className="section-kicker">Guided district demo</span><h2>See the platform through one connected day.</h2><p>Jordan is a fictional student. The workflow shows how information can move with care—without making students or families repeat their story at every door.</p></div>
@@ -143,19 +169,22 @@ export default function Home() {
     <section className="community-section" id="community">
       <div className="section-heading light"><span className="section-kicker">One platform · different needs</span><h2>Technology that works for the whole school community.</h2><p>Switch perspectives to see how the same connected platform removes a different barrier for each person.</p></div>
       <div className="role-tabs" role="tablist" aria-label="Community member views">{(["student","educator","family","support","district"] as RoleId[]).map((id) => <button key={id} role="tab" aria-selected={role === id} className={role === id ? "active" : ""} onClick={() => setRole(id)}>{id === "support" ? "Support team" : id[0].toUpperCase() + id.slice(1)}</button>)}</div>
-      <div className="role-stage"><div className="role-copy"><span>{activeRole.eyebrow}</span><h3>{activeRole.title}</h3><p>{activeRole.copy}</p><ul>{activeRole.wins.map((win) => <li key={win}><Check /> {win}</li>)}</ul></div><RolePreview type={activeRole.preview} /></div>
+      <div className="role-stage"><div className="role-copy"><span>{activeRole.eyebrow}</span><h3>{activeRole.title}</h3><p>{activeRole.copy}</p><ul>{activeRole.wins.map((win) => <li key={win}><Check /> {win}</li>)}</ul></div><RolePreview type={activeRole.preview} onAction={setRoleAction} message={roleAction} /></div>
     </section>
 
     <section className="suite-section" id="suite">
       <div className="section-heading split"><div><span className="section-kicker">The SchoolOS suite</span><h2>One coherent foundation.<br />Six connected capabilities.</h2></div><p>Districts can begin with the highest-priority workflow and expand without rebuilding the experience around a new vendor every year.</p></div>
-      <div className="suite-grid">{suiteItems.map(({ icon: Icon, title, copy, detail }, index) => <article key={title}><span className={`suite-icon suite-${index + 1}`}><Icon /></span><span className="suite-number">0{index + 1}</span><h3>{title}</h3><p>{copy}</p><small>{detail}</small></article>)}</div>
+      <div className="suite-grid">{suiteItems.map(({ icon: Icon, title, copy, detail }, index) => <article key={title} className={suiteOpen === index ? "selected" : ""} role="button" tabIndex={0} aria-label={`Explore ${title}`} onClick={() => setSuiteOpen(index)} onKeyDown={(event) => { if (event.key === "Enter" || event.key === " ") setSuiteOpen(index); }}><span className={`suite-icon suite-${index + 1}`}><Icon /></span><span className="suite-number">0{index + 1}</span><h3>{title}</h3><p>{copy}</p><small>{detail}</small></article>)}</div>
+      <div className="suite-detail" aria-live="polite"><span className={`suite-icon suite-${suiteOpen + 1}`}>{(() => { const Icon = suiteItems[suiteOpen].icon; return <Icon />; })()}</span><div><small>Selected capability</small><strong>{suiteItems[suiteOpen].title}</strong><p>{suiteItems[suiteOpen].copy} {suiteItems[suiteOpen].detail}</p></div><button onClick={() => document.getElementById("community")?.scrollIntoView({ behavior: "smooth" })}>See it by role <ArrowRight /></button></div>
       <div className="connected-layer"><Network /><div><span>Connected data and workflow layer</span><strong>One student, one trusted story, appropriate access for every role.</strong></div><div className="layer-chips"><span>SIS</span><span>LMS</span><span>IEP / MTSS</span><span>Curriculum</span><span>Family</span><span>Analytics</span></div></div>
     </section>
 
     <section className="ai-section" id="responsible-ai">
-      <div className="ai-demo-card"><div className="ai-card-top"><span><Bot /> SchoolOS Copilot</span><small>Teacher review required</small></div><div className="ai-prompt"><span>Teacher request</span><p>“Create a visual warm-up for balancing equations. Keep it grade-level, readable on a phone, and offer an audio option.”</p></div><div className="ai-result"><span><Sparkles /> Draft ready for review</span><div><Check /> District standard aligned</div><div><Check /> Visual and audio supports included</div><div><Check /> Student data excluded from the prompt</div></div><button>Review and edit draft <ArrowRight /></button></div>
+      <div className={`ai-demo-card ${aiReviewed ? "reviewed" : ""}`}><div className="ai-card-top"><span><Bot /> SchoolOS Copilot</span><small>{aiReviewed ? "Approved by Ms. Reed" : "Teacher review required"}</small></div><div className="ai-prompt"><span>Teacher request</span><p>“Create a visual warm-up for balancing equations. Keep it grade-level, readable on a phone, and offer an audio option.”</p></div><div className="ai-result"><span>{aiReviewed ? <><CheckCircle2 /> Ready to assign</> : <><Sparkles /> Draft ready for review</>}</span><div><Check /> District standard aligned</div><div><Check /> Visual and audio supports included</div><div><Check /> Student data excluded from the prompt</div></div><button onClick={() => setAiReviewed(!aiReviewed)}>{aiReviewed ? "Return to draft" : "Review and approve draft"} <ArrowRight /></button></div>
       <div className="ai-copy"><span className="section-kicker">AI that serves educators</span><h2>Powerful assistance.<br />Clear human control.</h2><p>AI can reduce repetitive work and make personalization practical—but it should never quietly make high-stakes decisions about students.</p><div className="guardrails"><div><ShieldCheck /><span><strong>People stay accountable</strong><small>Staff review outputs before they affect instruction, services, or communication.</small></span></div><div><BookOpen /><span><strong>Sources stay visible</strong><small>Educators can inspect the standards, materials, and context behind a suggestion.</small></span></div><div><Accessibility /><span><strong>Equity is tested, not assumed</strong><small>District-defined review for language, accessibility, bias, and disparate impact.</small></span></div></div></div>
     </section>
+
+    <section className="campus-vision" aria-label="Connected school community"><img src="/art/connected-campus.png" alt="A diverse urban school community learning in a bright connected campus" /><div><span>Designed for the real school day</span><h2>Technology should connect the people already doing the work.</h2><p>One flexible foundation for learning, student support, family partnership, and district operations.</p><a href="#possibilities">See how districts can start <ArrowRight /></a></div></section>
 
     <section className="immersive-section">
       <div className="immersive-heading"><span className="section-kicker">A small window into what else is possible</span><h2>Curriculum can become an experience.</h2><p>Immersive learning is one optional part of the suite—not the center of it. Students can investigate places, evidence, and competing interpretations together.</p></div>
@@ -168,13 +197,14 @@ export default function Home() {
     </section>
 
     <footer><div className="footer-brand"><span><GraduationCap /></span><div><strong>SchoolOS</strong><small>The connected software suite for the school of tomorrow.</small></div></div><a href="#top">Return to the top <ArrowRight /></a></footer>
+    {actionOpen && <div className="demo-modal" role="dialog" aria-modal="true" aria-labelledby="next-action-title" onClick={() => setActionOpen(false)}><div onClick={(event) => event.stopPropagation()}><button className="modal-close" aria-label="Close" onClick={() => setActionOpen(false)}><X /></button><span className="section-kicker">Coordinated next step</span><h2 id="next-action-title">Tomorrow’s warm-up is ready.</h2><p>The visual balance model that helped Jordan has been added to Ms. Reed’s draft. The teacher reviews it before it reaches the class.</p><div className="modal-route"><CheckCircle2 /><span><strong>Classroom context preserved</strong><small>No diagnosis or private support note is exposed.</small></span></div><a className="button-primary" href="#responsible-ai" onClick={() => setActionOpen(false)}>Review the AI workflow <ArrowRight /></a></div></div>}
   </main>;
 }
 
-function RolePreview({ type }: { type: "student" | "teacher" | "family" | "support" | "district" }) {
-  if (type === "student") return <div className="role-preview student-preview"><div className="preview-top"><span>My learning</span><strong>Good morning, Jordan</strong></div><div className="student-task"><span>Today’s next step</span><strong>Show how you balanced the equation</strong><div><button>Draw it</button><button>Explain it</button><button>Upload it</button></div></div><div className="student-progress"><span>Weekly goal</span><strong>3 of 4 practice moments</strong><i><b /></i></div></div>;
+function RolePreview({ type, onAction, message }: { type: "student" | "teacher" | "family" | "support" | "district"; onAction: (message: string) => void; message: string }) {
+  if (type === "student") return <div className="role-preview student-preview"><div className="preview-top"><span>My learning</span><strong>Good morning, Jordan</strong></div><div className="student-task"><span>Today’s next step</span><strong>Show how you balanced the equation</strong><div><button onClick={() => onAction("Drawing canvas selected — visual tools are ready.")}>Draw it</button><button onClick={() => onAction("Audio explanation selected — microphone check passed.")}>Explain it</button><button onClick={() => onAction("Camera upload selected — photo guidance is ready.")}>Upload it</button></div><small className="role-feedback" aria-live="polite">{message}</small></div><div className="student-progress"><span>Weekly goal</span><strong>3 of 4 practice moments</strong><i><b /></i></div></div>;
   if (type === "teacher") return <div className="role-preview teacher-preview"><div className="preview-top"><span>Period 2 · Math</span><strong>Classroom brief</strong></div><div className="teacher-metrics"><div><strong>18</strong><span>Ready to extend</span></div><div><strong>6</strong><span>Need a visual model</span></div><div><strong>3</strong><span>Check in first</span></div></div><div className="teacher-action"><Sparkles /><span><strong>Warm-up draft ready</strong><small>Aligned to today’s objective · review before sharing</small></span><ChevronRight /></div></div>;
-  if (type === "family") return <div className="role-preview phone-preview"><div className="phone-shell"><div className="phone-bar"><span>School update</span><small>Español</small></div><div className="family-message"><span>Today · 3:42 PM</span><strong>Jordan kept working through a challenging math problem today.</strong><p>Ask: “Can you show me how you kept both sides balanced?” No worksheet needed.</p><div>Celebrate today 🎉</div></div><button>Reply to the teacher</button></div></div>;
+  if (type === "family") return <div className="role-preview phone-preview"><div className="phone-shell"><div className="phone-bar"><span>School update</span><small>Español</small></div><div className="family-message"><span>Today · 3:42 PM</span><strong>Jordan kept working through a challenging math problem today.</strong><p>Ask: “Can you show me how you kept both sides balanced?” No worksheet needed.</p><div>{message}</div></div><button onClick={() => onAction("Reply opened in the family’s preferred language.")}>Reply to the teacher</button></div></div>;
   if (type === "support") return <div className="role-preview support-preview"><div className="preview-top"><span>Authorized team view</span><strong>Jordan’s support plan</strong></div><div className="goal-row"><span>Current goal</span><strong>Explain a problem-solving strategy independently</strong><i><b /></i><small>72% toward term target</small></div><div className="support-note"><CheckCircle2 /><span><strong>Classroom strategy connected</strong><small>Visual balance model · added today by Ms. Reed</small></span></div></div>;
   return <div className="role-preview district-preview"><div className="preview-top"><span>District learning & access</span><strong>Where should we focus support?</strong></div><div className="district-chart"><div><span>Multilingual family reach</span><i><b style={{ width: "84%" }} /></i></div><div><span>Timely service delivery</span><i><b style={{ width: "72%" }} /></i></div><div><span>Accessible materials</span><i><b style={{ width: "91%" }} /></i></div></div><div className="district-note"><BarChart3 /><span><strong>Pattern worth reviewing</strong><small>Two schools need additional translation workflow support.</small></span></div></div>;
 }

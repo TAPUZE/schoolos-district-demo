@@ -227,7 +227,7 @@ export type WorldPoint = readonly [number, number, number];
 
 export const ALTAR_RAMP_ASCENT_ROUTE: readonly WorldPoint[] = [
   [RAMP_FOOT_X, PRIESTS_FLOOR_Y + 0.18, ALTAR_CENTER_Z],
-  [RAMP_TOP_X, ALTAR_TOP_Y - 0.03, ALTAR_CENTER_Z],
+  [RAMP_TOP_X, PRIESTS_FLOOR_Y + RAMP_TOP_LOCAL_Y, ALTAR_CENTER_Z],
 ];
 
 export const WOMENS_STAIR_ASCENT_ROUTE: readonly WorldPoint[] = (() => {
@@ -307,7 +307,7 @@ export const TEMPLE_GEOMETRY_AUDIT: TempleGeometryAuditCheck[] = [
   },
   {
     id: "altar-ramp-top-joins-altar",
-    passed: almostEqual(altarRampHeightAt(RAMP_TOP_X, ALTAR_CENTER_Z) ?? Number.NaN, ALTAR_TOP_Y - 0.03),
+    passed: almostEqual(altarRampHeightAt(RAMP_TOP_X, ALTAR_CENTER_Z) ?? Number.NaN, PRIESTS_FLOOR_Y + RAMP_TOP_LOCAL_Y),
     detail: "Ramp collision terminates at the rendered altar-top elevation.",
   },
   {
